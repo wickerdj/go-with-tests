@@ -4,22 +4,41 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"strconv"
 	"time"
 )
+
+// Sleeper allows you to put delays
+type Sleeper interface {
+	Sleep()
+}
+
+// ConfigurableSleeper is an implementation of Sleeper with a defined delay
+type ConfigurableSleeper struct {
+	duration time.Duration
+	sleep    func(time.Duration)
+}
+
+// Sleep will pause execution for the defined Duration
+func (c *ConfigurableSleeper) Sleep() {
+	c.sleep(c.duration)
+}
 
 const finalWord = "Go!"
 const countdownStart = 3
 
-// Countdown ...
-func Countdown(out io.Writer) {
+// Countdown prints a countdown from 3 to out with a delay between count provided by Sleeper
+func Countdown(out io.Writer, sleeper Sleeper) {
+
 	for i := countdownStart; i > 0; i-- {
-		time.Sleep(1 * time.Second)
-		fmt.Fprintf(out, strconv.Itoa(i)+"\n")
+		sleeper.Sleep()
+		fmt.Fprintln(out, i)
 	}
-	fmt.Fprintf(out, finalWord)
+
+	sleeper.Sleep()
+	fmt.Fprint(out, finalWord)
 }
 
 func main() {
-	Countdown(os.Stdout)
+	sleeper := &ConfigurableSleeper{1 * time.Second, time.Sleep}
+	Countdown(os.Stdout, sleeper)
 }
